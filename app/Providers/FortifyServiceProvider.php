@@ -51,11 +51,6 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 $user = $request->user();
                 
-                // Send email verification if user implements MustVerifyEmail
-                if ($user && $user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail()) {
-                    $user->sendEmailVerificationNotification();
-                }
-                
                 return response()->json([
                     'message' => 'Registration successful. Please check your email to verify your account.',
                     'email_verification_sent' => $user && $user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail(),
