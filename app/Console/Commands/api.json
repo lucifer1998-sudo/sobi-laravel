@@ -1,0 +1,721 @@
+{
+    "data": [
+        {
+            "id": "8c98a569-6683-4c52-a953-db126d92e9e7",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "There is nothing we can say that needs improvement with this home. It is perfect, exactly as described, and beautiful. Charles has everything set up perfectly that made our stay easy and thoughtless. Can’t wait to be back!",
+                "response": "Thank you, Casey! I’m thrilled our apartment was just what you needed and made your stay effortless. Can’t wait to welcome you back!"
+            },
+            "private": {
+                "feedback": null,
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-10-23T19:56:18+00:00",
+            "responded_at": "2025-10-23T22:21:55+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Casey",
+                "last_name": "Perez",
+                "language": "en"
+            }
+        },
+        {
+            "id": "ecc4619e-f04e-4324-968c-ec36b98c037c",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "This place was amazing! Exactly as seen in the pictures. Beautifully decorated, quality appliances and linens. It’s really close to public transportation into Boston. Charles was a wonderful host. Very responsive and open to feedback. He really cares about your happiness and well being. So sweet and made our vacation all the better.",
+                "response": "Thank you, Janay — I’m so glad our apartment met your expectations and that the decor and location worked well for your trip. I appreciate your helpful feedback and will address it to make the space even better; safe travels and you’re welcome back anytime."
+            },
+            "private": {
+                "feedback": null,
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-10-10T21:03:20+00:00",
+            "responded_at": "2025-10-10T21:08:00+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Janay",
+                "last_name": "Minton",
+                "language": "en"
+            }
+        },
+        {
+            "id": "7f7f7476-f888-480b-8486-4c12668e7c94",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "The place was exactly like the photos, Charles was a great host I would definitely stay here again.",
+                "response": "Appreciate the review, Danny — glad our apartment matched the photos and that you found me helpful. You’re welcome back any time; safe travels and hope to host you again."
+            },
+            "private": {
+                "feedback": "Thanks again Charles",
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-10-04T05:53:18+00:00",
+            "responded_at": "2025-10-04T15:12:39+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Danny",
+                "last_name": "Barros",
+                "language": "en"
+            }
+        },
+        {
+            "id": "b710da3b-38d0-4f1d-a5c6-20edaea8a43c",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "The space was beautiful and spacious.  We hosted a dinner for six people one of the evenings we stayed.  Lovely back deck as well!",
+                "response": "Deborah, I’m glad you enjoyed the spacious layout and lovely back deck at our apartment. It was a pleasure hosting you — you’re welcome back anytime."
+            },
+            "private": {
+                "feedback": "Charles, thank you for the use of your space.  We truly enjoyed our stay!!",
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-09-24T20:44:32+00:00",
+            "responded_at": "2025-09-24T21:22:34+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Deborah",
+                "last_name": "Rukin Gold",
+                "language": "en"
+            }
+        },
+        {
+            "id": "40a1f9ba-f354-41a1-8caa-680ac6dc3bfe",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "You want to leave! If you are accustomed to staying in fine hotels, you will feel right at home in Charles’s apartment. Everything is brand new and luxurious. Two plush king-size beds, stunning kitchen, great family space. There is nothing that he has skimped on. It’s truly beautiful!",
+                "response": null
+            },
+            "private": {
+                "feedback": "Charles – you got this! There is nothing that I would suggest you change in your apartment. And I’m pretty nitpicky but you nailed it! Thank you so much for everything and good luck with your future guests. :-)!",
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-09-22T12:38:01+00:00",
+            "responded_at": null,
+            "can_respond": true,
+            "guest": {
+                "first_name": "Mollie",
+                "last_name": "Givan",
+                "language": "en"
+            }
+        },
+        {
+            "id": "4805ba02-77ff-4061-a799-b85321f26212",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "We stayed for a full week and really enjoyed staying here. Everything was really clean, beds were comfortable, so many nice and thoughtful touches. Thankful for the washer and dryer! We did day trips outside of the city so it was nice to have free parking but we also did days in the city as well and it was nice being close to the T. We have a 4 year old so we chose to drive down to the station and park (only $7 for all day) but it’s definitely walkable for adults. The neighborhood is very quiet and peaceful; only thing I’d mention is the house is on a busy street and with that, there’s road noise. We sleep with a sound machine though so we slept peacefully. Communication with Charles was great, thanks again!",
+                "response": "Thanks so much for staying and for the thoughtful review — I’m glad our apartment was comfortable, clean, and convenient for both driving and T access, and that communication went smoothly. I appreciate your feedback and we’ll work on addressing it; you’re welcome back anytime."
+            },
+            "private": {
+                "feedback": "Thank you for a great stay!",
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-09-14T15:06:45+00:00",
+            "responded_at": "2025-09-14T16:38:02+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Brittany",
+                "last_name": "Pack",
+                "language": "en"
+            }
+        },
+        {
+            "id": "29073893-5468-4e79-b3de-4b52475ac078",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "Fantastic stay here! It was really comfortable, I suggest anyone thinking  about coming to Boston to come enjoy it! It was an awesome experience and will forever be a great memory for me",
+                "response": null
+            },
+            "private": {
+                "feedback": "Thank you so much, it was a great time and I appreciate you letting us stay there. It was fantastic",
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-09-01T19:53:39+00:00",
+            "responded_at": null,
+            "can_respond": true,
+            "guest": {
+                "first_name": "Michael",
+                "last_name": "Wenninger",
+                "language": "en"
+            }
+        },
+        {
+            "id": "dc6d159f-1dc6-41ae-87f3-fa538a185f8a",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "Great location outside of Boston.  Easy parking and the home was very well finished and had lots of space.",
+                "response": "Thanks so much for the kind words, Viatcheslav! We're really glad you found our apartment spacious and well-finished, and that the parking worked out well for you. It was a pleasure hosting you and we'd love to have you back anytime!"
+            },
+            "private": {
+                "feedback": null,
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-08-28T14:00:08+00:00",
+            "responded_at": "2025-08-28T14:10:13+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Viatcheslav",
+                "last_name": "Bakhour",
+                "language": "en"
+            }
+        },
+        {
+            "id": "7d282818-9a99-43a6-b515-d53b2178bc80",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "This place was absolutely amazing and peaceful.  The location and close proximity to everything was unmatched.  The space was immaculate and provided everything needed as a home away from home.  The second level of the space was a wonderful bonus that provided more space than we could have imagined.  Such beautiful decor and very convenient having smart TVs to enjoy!  This Airbnb has truly set the bar!  You will not be disappointed!",
+                "response": "Thank you for the wonderful review, Unique! It was a pleasure hosting you both, and I’m glad our apartment’s layout, decor, and amenities made your stay feel like a home away from home. You’re always welcome back whenever your travels bring you this way!"
+            },
+            "private": {
+                "feedback": "Hello!\n\nThank you again for providing such a wonderful space.  The only suggestion I have that is very minor would be to install a rod and curtains over the double deck doors to have privacy at night time so no one can see in when the lights are on. Other than that that this place truly exceeded my expectations!",
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-08-14T16:32:32+00:00",
+            "responded_at": "2025-08-14T18:52:41+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Unique",
+                "last_name": "Forde",
+                "language": "en"
+            }
+        },
+        {
+            "id": "21941e37-18d4-49f7-9caa-b9454e8b371a",
+            "platform": "airbnb",
+            "public": {
+                "rating": 5,
+                "rating_platform_original": "5.00",
+                "review": "We would love to stay here again. The place is exceptional. Very comfortable and beautiful. We were able to book last minute for a family need. Really lovely to have such a place to relax after hectic days.",
+                "response": "Thank you, Lenore! I’m thrilled you all found our apartment exceptional and comfortable, especially on such short notice. You’re always welcome back whenever you need a relaxing getaway after hectic days."
+            },
+            "private": {
+                "feedback": null,
+                "detailed_ratings": [
+                    {
+                        "type": "value",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "cleanliness",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "communication",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "location",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "checkin",
+                        "rating": 5,
+                        "comment": null
+                    },
+                    {
+                        "type": "accuracy",
+                        "rating": 5,
+                        "comment": "Even better than the pictures. Truly lovely !"
+                    },
+                    {
+                        "type": "facilities",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "staff",
+                        "rating": 0,
+                        "comment": null
+                    },
+                    {
+                        "type": "services",
+                        "rating": 0,
+                        "comment": null
+                    }
+                ]
+            },
+            "reviewed_at": "2025-07-25T01:03:43+00:00",
+            "responded_at": "2025-07-25T02:57:10+00:00",
+            "can_respond": false,
+            "guest": {
+                "first_name": "Lenore",
+                "last_name": "Tietjens",
+                "language": "en"
+            }
+        }
+    ],
+    "links": {
+        "first": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews?page=1",
+        "last": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews?page=2",
+        "prev": null,
+        "next": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews?page=2"
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 2,
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "active": false
+            },
+            {
+                "url": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews?page=1",
+                "label": "1",
+                "active": true
+            },
+            {
+                "url": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews?page=2",
+                "label": "2",
+                "active": false
+            },
+            {
+                "url": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews?page=2",
+                "label": "Next &raquo;",
+                "active": false
+            }
+        ],
+        "path": "http://public.api.hospitable.com/v2/properties/b410e18f-8922-4d0b-98f6-93b33677ff90/reviews",
+        "per_page": 10,
+        "to": 10,
+        "total": 17
+    }
+}

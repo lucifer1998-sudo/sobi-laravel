@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'hospitable' => [
+        'api_url' => env('HOSPITABLE_API_URL'),
+        'api_key' => env('HOSPITABLE_API_KEY'),
+    ],
+
 ];

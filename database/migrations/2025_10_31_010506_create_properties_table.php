@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('public_name')->nullable();
             $table->string('picture_url')->nullable();
-            $table->smallInteger('timezone_offset')->nullable();
+            $table->string('timezone_offset', 10)->nullable();
             $table->boolean('listed')->default(false);
             $table->string('currency', 8)->nullable();
             $table->text('summary')->nullable();
@@ -50,7 +50,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('parent_id')->references('id')->on('properties')->nullOnDelete();
+            // $table->foreign('parent_id')->references('id')->on('properties')->nullOnDelete();
 
             $table->index('listed');
             $table->index(['address_city', 'address_state']);
