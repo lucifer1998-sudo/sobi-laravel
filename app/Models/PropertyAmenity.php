@@ -15,7 +15,21 @@ class PropertyAmenity extends Model
      *
      * @var string
      */
-    protected $table = 'property_amenitites';
+    protected $table = 'property_amenities';
+
+    /**
+     * The "type" of the primary key ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
@@ -24,7 +38,7 @@ class PropertyAmenity extends Model
      */
     protected $fillable = [
         'property_id',
-        'amenity_name',
+        'amenity_id',
     ];
 
     /**
@@ -33,6 +47,14 @@ class PropertyAmenity extends Model
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class, 'property_id');
+    }
+
+    /**
+     * Get the amenity.
+     */
+    public function amenity(): BelongsTo
+    {
+        return $this->belongsTo(Amenity::class, 'amenity_id');
     }
 }
 

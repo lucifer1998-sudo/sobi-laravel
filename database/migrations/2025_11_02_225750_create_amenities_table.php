@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('property_amenitites', function (Blueprint $table) {
-            $table->uuid('property_id');
-            $table->string('amenity_name');
+        Schema::create('amenities', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('name')->unique();
+            $table->string('icon_url')->nullable();
+            $table->string('display_name')->nullable(); // Human-readable name like "Air conditioning"
             $table->timestamps();
             
-            $table->primary(['property_id', 'amenity_name']);
-            $table->foreign('property_id')->references('id')->on('properties')->onDelete('cascade');
+            $table->index('name');
         });
     }
 
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('property_amenitites');
+        Schema::dropIfExists('amenities');
     }
 };

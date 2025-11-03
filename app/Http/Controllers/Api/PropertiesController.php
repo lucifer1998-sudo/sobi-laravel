@@ -35,6 +35,7 @@ class PropertiesController extends Controller
                 // Only need ratings for average calculation
                 $query->select('id', 'property_id', 'rating');
             },
+            'amenities', // Load amenities for list view if needed later
         ]);
 
         // Search functionality
@@ -119,6 +120,7 @@ class PropertiesController extends Controller
             },
             'parent',
             'children',
+            'roomDetails',
         ])->findOrFail($id);
 
         // For detail view, include all reviews (no limit)
@@ -161,14 +163,70 @@ class PropertiesController extends Controller
     protected function formatPropertyResponse(Property $property, bool $limitReviews = true): array
     {
         // Calculate average rating from reviews
-        $averageRating = $property->reviews->avg('rating');
-        $totalReviews = $property->reviews->count();
+        $reviews = $property->reviews;
+        $averageRating = $reviews->avg('rating');
+        $totalReviews = $reviews->count();
+        
+        // Calculate percentage of reviews by rating
+        $avg5 = $totalReviews > 0 ? round(($reviews->where('rating', 5)->count() / $totalReviews) * 100, 2) : 0;
+        $avg4 = $totalReviews > 0 ? round(($reviews->where('rating', 4)->count() / $totalReviews) * 100, 2) : 0;
+        $avg3 = $totalReviews > 0 ? round(($reviews->where('rating', 3)->count() / $totalReviews) * 100, 2) : 0;
+        $avg2 = $totalReviews > 0 ? round(($reviews->where('rating', 2)->count() / $totalReviews) * 100, 2) : 0;
+        $avg1 = $totalReviews > 0 ? round(($reviews->where('rating', 1)->count() / $totalReviews) * 100, 2) : 0;
+        
+        // Calculate average ratings for detailed categories
+        $categoryRatings = [
+            'cleanliness' => [],
+            'accuracy' => [],
+            'checkin' => [],
+            'communication' => [],
+            'location' => [],
+        ];
+        
+        // Collect ratings from detailed_ratings array
+        foreach ($reviews as $review) {
+            $detailedRatings = $review->detailed_ratings ?? [];
+            if (is_array($detailedRatings)) {
+                foreach ($detailedRatings as $detailedRating) {
+                    $type = $detailedRating['type'] ?? null;
+                    $rating = $detailedRating['rating'] ?? null;
+                    
+                    if ($rating !== null && $rating > 0 && in_array($type, array_keys($categoryRatings))) {
+                        $categoryRatings[$type][] = $rating;
+                    }
+                }
+            }
+        }
+        
+        // Calculate averages for each category
+        $avgCleanliness = !empty($categoryRatings['cleanliness']) 
+            ? round(array_sum($categoryRatings['cleanliness']) / count($categoryRatings['cleanliness']), 2) 
+            : null;
+        $avgAccuracy = !empty($categoryRatings['accuracy']) 
+            ? round(array_sum($categoryRatings['accuracy']) / count($categoryRatings['accuracy']), 2) 
+            : null;
+        $avgCheckin = !empty($categoryRatings['checkin']) 
+            ? round(array_sum($categoryRatings['checkin']) / count($categoryRatings['checkin']), 2) 
+            : null;
+        $avgCommunication = !empty($categoryRatings['communication']) 
+            ? round(array_sum($categoryRatings['communication']) / count($categoryRatings['communication']), 2) 
+            : null;
+        $avgLocation = !empty($categoryRatings['location']) 
+            ? round(array_sum($categoryRatings['location']) / count($categoryRatings['location']), 2) 
+            : null;
 
         // Get primary image
         $primaryImage = $property->images->firstWhere('is_primary');
         
-        // Format amenities as array of names
-        $amenities = $property->amenities->pluck('amenity_name')->toArray();
+        // Format amenities with full details including icons
+        $amenities = $property->amenities->map(function ($amenity) {
+            return [
+                'id' => $amenity->id,
+                'name' => $amenity->name,
+                'display_name' => $amenity->display_name,
+                'icon_url' => $amenity->icon_url,
+            ];
+        })->toArray();
 
         // Format house rules
         $houseRules = $property->houseRules ? [
@@ -250,6 +308,26 @@ class PropertiesController extends Controller
             ];
         })->toArray();
 
+        // Format room details
+        $roomDetails = $property->roomDetails->map(function ($roomDetail) {
+            $beds = [];
+            if (!empty($roomDetail->beds) && is_array($roomDetail->beds)) {
+                foreach ($roomDetail->beds as $bed) {
+                    $beds[] = [
+                        'type' => $bed['type'] ?? null,
+                        'type_display' => $this->formatBedType($bed['type'] ?? null),
+                        'quantity' => $bed['quantity'] ?? 0,
+                    ];
+                }
+            }
+            
+            return [
+                'type' => $roomDetail->type,
+                'type_display' => $this->formatRoomType($roomDetail->type),
+                'beds' => $beds,
+            ];
+        })->toArray();
+
         return [
             'id' => $property->id,
             'name' => $property->name,
@@ -274,16 +352,61 @@ class PropertiesController extends Controller
             'house_rules' => $houseRules,
             'amenities' => $amenities,
             'images' => $images,
+            'room_details' => $roomDetails,
             'reviews' => $reviews,
             'reviews_summary' => [
                 'average_rating' => $averageRating ? round($averageRating, 2) : null,
                 'total_reviews' => $totalReviews,
+                'cleanliness' => $avgCleanliness,
+                'accuracy' => $avgAccuracy,
+                'checkin' => $avgCheckin,
+                'communication' => $avgCommunication,
+                'location' => $avgLocation,
+                'avg' => [
+                    '5' => $avg5,
+                    '4' => $avg4,
+                    '3' => $avg3,
+                    '2' => $avg2,
+                    '1' => $avg1,
+                ],
             ],
             'parent' => $parent,
             'children' => $children,
             'created_at' => $property->created_at?->toISOString(),
             'updated_at' => $property->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * Format room type from snake_case to readable format.
+     *
+     * @param string|null $type
+     * @return string|null
+     */
+    protected function formatRoomType(?string $type): ?string
+    {
+        if (empty($type)) {
+            return null;
+        }
+
+        // Convert snake_case to title case
+        return str_replace('_', ' ', ucwords($type, '_'));
+    }
+
+    /**
+     * Format bed type from snake_case to readable format.
+     *
+     * @param string|null $type
+     * @return string|null
+     */
+    protected function formatBedType(?string $type): ?string
+    {
+        if (empty($type)) {
+            return null;
+        }
+
+        // Convert snake_case to title case
+        return str_replace('_', ' ', ucwords($type, '_'));
     }
 }
 

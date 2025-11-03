@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Property extends Model
 {
@@ -94,11 +95,24 @@ class Property extends Model
     }
 
     /**
-     * Get the amenities for the property.
+     * Get the property amenities (pivot).
      */
-    public function amenities(): HasMany
+    public function propertyAmenities(): HasMany
     {
         return $this->hasMany(PropertyAmenity::class, 'property_id');
+    }
+
+    /**
+     * Get the amenities for the property.
+     */
+    public function amenities(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Amenity::class,
+            'property_amenities',
+            'property_id',
+            'amenity_id'
+        );
     }
 
     /**
@@ -131,6 +145,14 @@ class Property extends Model
     public function children(): HasMany
     {
         return $this->hasMany(Property::class, 'parent_id');
+    }
+
+    /**
+     * Get the room details for the property.
+     */
+    public function roomDetails(): HasMany
+    {
+        return $this->hasMany(RoomDetail::class, 'property_id');
     }
 }
 

@@ -5,8 +5,10 @@ namespace App\Console\Commands;
 use App\Http\Traits\HospitableTrait;
 use App\Models\Property;
 use App\Models\PropertyHouseRule;
+use App\Models\Amenity;
 use App\Models\PropertyAmenity;
 use App\Models\PropertyImage;
+use App\Models\RoomDetail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -184,6 +186,11 @@ class SyncPropertiesFromHospitable extends Command
             // Sync images from API
             $this->syncImages($propertyId);
 
+            // Sync room details if present
+            if (isset($propertyData['room_details']) && is_array($propertyData['room_details'])) {
+                $this->syncRoomDetails($propertyId, $propertyData['room_details']);
+            }
+
             return [
                 'created' => $wasRecentlyCreated,
                 'property' => $property,
@@ -296,9 +303,20 @@ class SyncPropertiesFromHospitable extends Command
                 : (string) $amenity;
 
             if (!empty($amenityName)) {
+                // Find or create the amenity
+                $amenity = Amenity::firstOrCreate(
+                    ['name' => $amenityName],
+                    [
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'display_name' => ucfirst(str_replace('_', ' ', $amenityName)),
+                        'icon_url' => null,
+                    ]
+                );
+
+                // Link the amenity to the property
                 PropertyAmenity::create([
                     'property_id' => $propertyId,
-                    'amenity_name' => $amenityName,
+                    'amenity_id' => $amenity->id,
                 ]);
             }
         }
@@ -378,6 +396,33 @@ class SyncPropertiesFromHospitable extends Command
         } catch (\Exception $e) {
             // Log error but don't fail the entire sync
             Log::warning("Failed to sync images for property {$propertyId}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sync room details for a property.
+     *
+     * @param string $propertyId
+     * @param array $roomDetails
+     * @return void
+     */
+    protected function syncRoomDetails(string $propertyId, array $roomDetails): void
+    {
+        // Delete existing room details
+        RoomDetail::where('property_id', $propertyId)->delete();
+
+        // Insert new room details
+        foreach ($roomDetails as $roomDetail) {
+            $type = $roomDetail['type'] ?? null;
+            $beds = $roomDetail['beds'] ?? [];
+
+            if (!empty($type)) {
+                RoomDetail::create([
+                    'property_id' => $propertyId,
+                    'type' => $type,
+                    'beds' => !empty($beds) ? $beds : null,
+                ]);
+            }
         }
     }
 
