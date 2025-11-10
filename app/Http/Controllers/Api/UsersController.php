@@ -179,7 +179,7 @@ class UsersController extends Controller
     }
 
     public function getHostsList(){
-        $agents = User::role('host')->select('id','name')->get();
+        $agents = User::role('host')->select('*')->get();
         return response()->json($agents);
     }
 }
