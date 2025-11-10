@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Amenity;
 use App\Models\Property;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PropertiesController extends Controller
 {
@@ -69,10 +72,10 @@ class PropertiesController extends Controller
         // Sorting
         if ($request->has('sort_by') && $request->has('sort_order')) {
             $sortBy = $request->sort_by;
-            $sortOrder = in_array(strtolower($request->sort_order), ['asc', 'desc']) 
-                ? strtolower($request->sort_order) 
+            $sortOrder = in_array(strtolower($request->sort_order), ['asc', 'desc'])
+                ? strtolower($request->sort_order)
                 : 'desc';
-            
+
             $allowedSortFields = [
                 'name',
                 'public_name',
@@ -82,7 +85,7 @@ class PropertiesController extends Controller
                 'updated_at',
                 'capacity_max',
             ];
-            
+
             if (in_array($sortBy, $allowedSortFields)) {
                 $query->orderBy($sortBy, $sortOrder);
             } else {
@@ -112,6 +115,7 @@ class PropertiesController extends Controller
         $property = Property::with([
             'houseRules',
             'amenities',
+            'host',
             'images' => function ($query) {
                 $query->orderBy('order')->orderBy('is_primary', 'desc');
             },
@@ -137,7 +141,7 @@ class PropertiesController extends Controller
     {
         // Calculate average rating from reviews
         $averageRating = $property->reviews->avg('rating');
-        
+
         // Get primary image
         $primaryImage = $property->images->firstWhere('is_primary');
 
@@ -166,14 +170,14 @@ class PropertiesController extends Controller
         $reviews = $property->reviews;
         $averageRating = $reviews->avg('rating');
         $totalReviews = $reviews->count();
-        
+
         // Calculate percentage of reviews by rating
         $avg5 = $totalReviews > 0 ? round(($reviews->where('rating', 5)->count() / $totalReviews) * 100, 2) : 0;
         $avg4 = $totalReviews > 0 ? round(($reviews->where('rating', 4)->count() / $totalReviews) * 100, 2) : 0;
         $avg3 = $totalReviews > 0 ? round(($reviews->where('rating', 3)->count() / $totalReviews) * 100, 2) : 0;
         $avg2 = $totalReviews > 0 ? round(($reviews->where('rating', 2)->count() / $totalReviews) * 100, 2) : 0;
         $avg1 = $totalReviews > 0 ? round(($reviews->where('rating', 1)->count() / $totalReviews) * 100, 2) : 0;
-        
+
         // Calculate average ratings for detailed categories
         $categoryRatings = [
             'cleanliness' => [],
@@ -182,7 +186,7 @@ class PropertiesController extends Controller
             'communication' => [],
             'location' => [],
         ];
-        
+
         // Collect ratings from detailed_ratings array
         foreach ($reviews as $review) {
             $detailedRatings = $review->detailed_ratings ?? [];
@@ -190,34 +194,34 @@ class PropertiesController extends Controller
                 foreach ($detailedRatings as $detailedRating) {
                     $type = $detailedRating['type'] ?? null;
                     $rating = $detailedRating['rating'] ?? null;
-                    
+
                     if ($rating !== null && $rating > 0 && in_array($type, array_keys($categoryRatings))) {
                         $categoryRatings[$type][] = $rating;
                     }
                 }
             }
         }
-        
+
         // Calculate averages for each category
-        $avgCleanliness = !empty($categoryRatings['cleanliness']) 
-            ? round(array_sum($categoryRatings['cleanliness']) / count($categoryRatings['cleanliness']), 2) 
+        $avgCleanliness = !empty($categoryRatings['cleanliness'])
+            ? round(array_sum($categoryRatings['cleanliness']) / count($categoryRatings['cleanliness']), 2)
             : null;
-        $avgAccuracy = !empty($categoryRatings['accuracy']) 
-            ? round(array_sum($categoryRatings['accuracy']) / count($categoryRatings['accuracy']), 2) 
+        $avgAccuracy = !empty($categoryRatings['accuracy'])
+            ? round(array_sum($categoryRatings['accuracy']) / count($categoryRatings['accuracy']), 2)
             : null;
-        $avgCheckin = !empty($categoryRatings['checkin']) 
-            ? round(array_sum($categoryRatings['checkin']) / count($categoryRatings['checkin']), 2) 
+        $avgCheckin = !empty($categoryRatings['checkin'])
+            ? round(array_sum($categoryRatings['checkin']) / count($categoryRatings['checkin']), 2)
             : null;
-        $avgCommunication = !empty($categoryRatings['communication']) 
-            ? round(array_sum($categoryRatings['communication']) / count($categoryRatings['communication']), 2) 
+        $avgCommunication = !empty($categoryRatings['communication'])
+            ? round(array_sum($categoryRatings['communication']) / count($categoryRatings['communication']), 2)
             : null;
-        $avgLocation = !empty($categoryRatings['location']) 
-            ? round(array_sum($categoryRatings['location']) / count($categoryRatings['location']), 2) 
+        $avgLocation = !empty($categoryRatings['location'])
+            ? round(array_sum($categoryRatings['location']) / count($categoryRatings['location']), 2)
             : null;
 
         // Get primary image
         $primaryImage = $property->images->firstWhere('is_primary');
-        
+
         // Format amenities with full details including icons
         $amenities = $property->amenities->map(function ($amenity) {
             return [
@@ -320,7 +324,7 @@ class PropertiesController extends Controller
                     ];
                 }
             }
-            
+
             return [
                 'type' => $roomDetail->type,
                 'type_display' => $this->formatRoomType($roomDetail->type),
@@ -374,6 +378,9 @@ class PropertiesController extends Controller
             'children' => $children,
             'created_at' => $property->created_at?->toISOString(),
             'updated_at' => $property->updated_at?->toISOString(),
+            'min_rent_age' => $property->min_rent_age,
+            'host_user_id' => $property->host_user_id,
+            'host' => $property->host
         ];
     }
 
@@ -408,5 +415,468 @@ class PropertiesController extends Controller
         // Convert snake_case to title case
         return str_replace('_', ' ', ucwords($type, '_'));
     }
-}
 
+    /**
+     * Resolve amenity identifiers from the incoming payload.
+     *
+     * @param array $amenities
+     * @return array<int, string>
+     */
+    protected function resolveAmenityIds(array $amenities): array
+    {
+        $ids = [];
+
+        foreach ($amenities as $amenity) {
+            if (is_array($amenity)) {
+                $amenityId = $amenity['id'] ?? null;
+                $amenityName = $amenity['name'] ?? $amenity['title'] ?? $amenity['label'] ?? null;
+                $amenityDisplayName = $amenity['display_name'] ?? null;
+                $amenityIcon = $amenity['icon_url'] ?? null;
+            } else {
+                $amenityId = is_string($amenity) ? $amenity : null;
+                $amenityName = is_string($amenity) ? $amenity : null;
+                $amenityDisplayName = null;
+                $amenityIcon = null;
+            }
+
+            if ($amenityId) {
+                $existingAmenity = Amenity::find($amenityId);
+                if ($existingAmenity) {
+                    $ids[] = $existingAmenity->id;
+                    continue;
+                }
+            }
+
+            if (!empty($amenityName)) {
+                $existingAmenity = Amenity::firstOrCreate(
+                    ['name' => $amenityName],
+                    [
+                        'id' => (string) Str::uuid(),
+                        'display_name' => $amenityDisplayName ?? $this->formatAmenityDisplayName($amenityName),
+                        'icon_url' => $amenityIcon,
+                    ]
+                );
+
+                $ids[] = $existingAmenity->id;
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids)));
+    }
+
+    /**
+     * Persist property images, ensuring a single primary image.
+     */
+    protected function storePropertyImages(Property $property, ?array $primaryImage, array $images): void
+    {
+        $prepared = [];
+
+        if (!empty($primaryImage['url'])) {
+            $prepared[] = [
+                'url' => $primaryImage['url'],
+                'caption' => $primaryImage['caption'] ?? null,
+                'is_primary' => true,
+            ];
+        }
+
+        foreach ($images as $image) {
+            if (!is_array($image) || empty($image['url'])) {
+                continue;
+            }
+
+            $prepared[] = [
+                'url' => $image['url'],
+                'caption' => $image['caption'] ?? null,
+                'is_primary' => $this->toBoolean($image['is_primary'] ?? false),
+            ];
+        }
+
+        if (empty($prepared)) {
+            return;
+        }
+
+        $primaryIndex = null;
+        foreach ($prepared as $index => $image) {
+            if (!empty($image['is_primary'])) {
+                $primaryIndex = $index;
+                break;
+            }
+        }
+
+        if ($primaryIndex === null) {
+            $primaryIndex = 0;
+            $prepared[0]['is_primary'] = true;
+        }
+
+        if ($primaryIndex !== 0) {
+            $primaryImageData = $prepared[$primaryIndex];
+            unset($prepared[$primaryIndex]);
+            array_unshift($prepared, $primaryImageData);
+        }
+
+        $unique = [];
+        $deduped = [];
+        foreach ($prepared as $image) {
+            $url = $image['url'];
+            if (isset($unique[$url])) {
+                continue;
+            }
+            $unique[$url] = true;
+            $deduped[] = $image;
+        }
+
+        $property->images()->delete();
+
+        foreach ($deduped as $index => $image) {
+            $property->images()->create([
+                'url' => $image['url'],
+                'caption' => $image['caption'],
+                'order' => $index,
+                'is_primary' => $index === 0,
+            ]);
+        }
+
+        if (empty($property->picture_url) && isset($deduped[0]['url'])) {
+            $property->picture_url = $deduped[0]['url'];
+            $property->save();
+        }
+    }
+
+    /**
+     * Normalise room detail bed payloads.
+     *
+     * @param array<int, mixed>|null $beds
+     * @return array<int, array<string, mixed>>
+     */
+    protected function sanitizeRoomDetailBeds(?array $beds): array
+    {
+        if (empty($beds) || !is_array($beds)) {
+            return [];
+        }
+
+        $normalised = [];
+
+        foreach ($beds as $bed) {
+            if (!is_array($bed)) {
+                continue;
+            }
+
+            $type = $bed['type'] ?? null;
+            if (empty($type)) {
+                continue;
+            }
+
+            $quantity = isset($bed['quantity']) ? (int) $bed['quantity'] : 0;
+
+            $normalised[] = [
+                'type' => $type,
+                'quantity' => $quantity,
+            ];
+        }
+
+        return array_values($normalised);
+    }
+
+    /**
+     * Derive a display name for an amenity.
+     */
+    protected function formatAmenityDisplayName(string $value): string
+    {
+        return (string) Str::of($value)
+            ->replace(['_', '-'], ' ')
+            ->squish()
+            ->title();
+    }
+
+    /**
+     * Coerce different boolean representations into a boolean value.
+     */
+    protected function toBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if ($value === null) {
+            return false;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    public function getListingsTable(Request $request)
+    {
+        $query = Property::query();
+
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('public_name', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('address_city', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('address_state', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('summary', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by listed status
+        if ($request->has('listed')) {
+            $listed = filter_var($request->listed, FILTER_VALIDATE_BOOLEAN);
+            $query->where('listed', $listed);
+        }
+
+        // Filter by city
+        if ($request->has('city') && !empty($request->city)) {
+            $query->where('address_city', 'LIKE', "%{$request->city}%");
+        }
+
+        // Filter by property type
+        if ($request->has('property_type') && !empty($request->property_type)) {
+            $query->where('property_type', $request->property_type);
+        }
+
+        // Sorting
+        if ($request->has('sort_by') && $request->has('sort_order')) {
+            $sortBy = $request->sort_by;
+            $sortOrder = in_array(strtolower($request->sort_order), ['asc', 'desc'])
+                ? strtolower($request->sort_order)
+                : 'desc';
+
+            $allowedSortFields = [
+                'name',
+                'public_name',
+                'address_city',
+                'address_state',
+                'created_at',
+                'updated_at',
+                'capacity_max',
+            ];
+
+            if (in_array($sortBy, $allowedSortFields)) {
+                $query->orderBy($sortBy, $sortOrder);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // Pagination
+        $perPage = min((int) $request->get('per_page', 15), 100);
+        $properties = $query->paginate($perPage);
+
+        // Transform the response to minimal format for list view
+        $properties->getCollection()->transform(function ($property) {
+            return $this->formatPropertyMinimalResponse($property);
+        });
+
+        return response()->json($properties);
+    }
+
+    /**
+     * Store a newly created property along with its related resources.
+     */
+    public function store(Request $request){
+        return response()->json($request->all());
+    }
+
+    /**
+     * Update an existing property along with its related resources.
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'public_name' => 'nullable|string|max:255',
+            'picture_url' => 'nullable|url|max:2048',
+            'timezone_offset' => 'nullable|string|max:10',
+            'listed' => 'nullable|boolean',
+            'currency' => 'nullable|string|max:8',
+            'summary' => 'nullable|string',
+            'description' => 'nullable|string',
+            'checkin_time' => 'nullable',
+            'checkout_time' => 'nullable',
+            'property_type' => 'nullable|string|max:255',
+            'room_type' => 'nullable|string|max:255',
+            'calendar_restricted' => 'nullable|boolean',
+            'address' => 'nullable|array',
+            'address.number' => 'nullable|string|max:255',
+            'address.street' => 'nullable|string|max:255',
+            'address.city' => 'nullable|string|max:255',
+            'address.state' => 'nullable|string|max:255',
+            'address.postcode' => 'nullable|string|max:32',
+            'address.country_code' => 'nullable|string|max:2',
+            'address.country' => 'nullable|string|max:2',
+            'address.country_name' => 'nullable|string|max:128',
+            'address.display' => 'nullable|string|max:255',
+            'address.latitude' => 'nullable|numeric',
+            'address.longitude' => 'nullable|numeric',
+            'address.coordinates' => 'nullable|array',
+            'address.coordinates.latitude' => 'nullable|numeric',
+            'address.coordinates.longitude' => 'nullable|numeric',
+            'capacity' => 'nullable|array',
+            'capacity.max' => 'nullable|integer|min:0',
+            'capacity.bedrooms' => 'nullable|integer|min:0',
+            'capacity.beds' => 'nullable|integer|min:0',
+            'capacity.bathrooms' => 'nullable|numeric|min:0',
+            'house_rules' => 'nullable|array',
+            'house_rules.events_allowed' => 'nullable|boolean',
+            'house_rules.pets_allowed' => 'nullable|boolean',
+            'house_rules.smoking_allowed' => 'nullable|boolean',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'nullable',
+            'images' => 'nullable|array',
+            'images.*.url' => 'required_with:images|url|max:2048',
+            'images.*.caption' => 'nullable|string|max:255',
+            'images.*.order' => 'nullable|integer|min:0',
+            'images.*.is_primary' => 'nullable|boolean',
+            'primary_image' => 'nullable|array',
+            'primary_image.url' => 'nullable|url|max:2048',
+            'primary_image.caption' => 'nullable|string|max:255',
+            'room_details' => 'nullable|array',
+            'room_details.*.type' => 'required_with:room_details|string|max:255',
+            'room_details.*.beds' => 'nullable|array',
+            'room_details.*.beds.*.type' => 'nullable|string|max:255',
+            'room_details.*.beds.*.quantity' => 'nullable|integer|min:0',
+            'min_rent_age' => 'nullable|integer|min:0',
+            'host_user_id' => 'nullable|integer',
+        ]);
+
+        $property = DB::transaction(function () use ($id, $validated) {
+            $property = Property::whereKey($id)->lockForUpdate()->firstOrFail();
+
+            $attributes = [
+                'name' => $validated['name'],
+                'public_name' => $validated['public_name'] ?? null,
+                'timezone_offset' => $validated['timezone_offset'] ?? null,
+                'currency' => $validated['currency'] ?? null,
+                'summary' => $validated['summary'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'checkin_time' => $validated['checkin_time'] ?? null,
+                'checkout_time' => $validated['checkout_time'] ?? null,
+                'property_type' => $validated['property_type'] ?? null,
+                'room_type' => $validated['room_type'] ?? null,
+                'min_rent_age' => $validated['min_rent_age'] ?? null,
+                'host_user_id' => $validated['host_user_id'] ?? null,
+            ];
+
+            if (array_key_exists('listed', $validated)) {
+                $attributes['listed'] = $this->toBoolean($validated['listed']);
+            }
+
+            if (array_key_exists('calendar_restricted', $validated)) {
+                $attributes['calendar_restricted'] = $this->toBoolean($validated['calendar_restricted']);
+            }
+
+            $pictureUrl = $property->picture_url;
+            if (array_key_exists('picture_url', $validated)) {
+                $pictureUrl = $validated['picture_url'];
+            } elseif (data_get($validated, 'primary_image.url')) {
+                $pictureUrl = data_get($validated, 'primary_image.url');
+            }
+            $attributes['picture_url'] = $pictureUrl;
+
+            $address = data_get($validated, 'address');
+            if (is_array($address)) {
+                $latitudeValue = data_get($address, 'coordinates.latitude', data_get($address, 'latitude'));
+                $longitudeValue = data_get($address, 'coordinates.longitude', data_get($address, 'longitude'));
+                $countryCode = $address['country_code'] ?? $address['country'] ?? null;
+
+                $attributes = array_merge($attributes, [
+                    'address_number' => $address['number'] ?? null,
+                    'address_street' => $address['street'] ?? null,
+                    'address_city' => $address['city'] ?? null,
+                    'address_state' => $address['state'] ?? null,
+                    'address_postcode' => $address['postcode'] ?? null,
+                    'address_country_code' => $countryCode,
+                    'address_country_name' => $address['country_name'] ?? null,
+                    'address_display' => $address['display'] ?? null,
+                    'latitude' => $latitudeValue !== null && $latitudeValue !== '' ? (float) $latitudeValue : null,
+                    'longitude' => $longitudeValue !== null && $longitudeValue !== '' ? (float) $longitudeValue : null,
+                    'address_display' => $address['number'] . ', ' . $address['street'] .', '. $address['city'] .', '. $address['state'] . ', '. $address['postcode'] . ', ' . $countryCode
+                ]);
+            }
+
+            $capacity = data_get($validated, 'capacity');
+            if (is_array($capacity)) {
+                $attributes = array_merge($attributes, [
+                    'capacity_max' => isset($capacity['max']) ? (int) $capacity['max'] : null,
+                    'capacity_bedrooms' => isset($capacity['bedrooms']) ? (int) $capacity['bedrooms'] : null,
+                    'capacity_beds' => isset($capacity['beds']) ? (int) $capacity['beds'] : null,
+                    'capacity_bathrooms' => isset($capacity['bathrooms']) ? (float) $capacity['bathrooms'] : null,
+                ]);
+            }
+
+            $property->fill($attributes);
+            $property->save();
+
+            if (array_key_exists('house_rules', $validated)) {
+                $houseRulesData = $validated['house_rules'] ?? [];
+                $property->houseRules()->updateOrCreate(
+                    ['property_id' => $property->id],
+                    [
+                        'pets_allowed' => $this->toBoolean($houseRulesData['pets_allowed'] ?? false),
+                        'smoking_allowed' => $this->toBoolean($houseRulesData['smoking_allowed'] ?? false),
+                        'events_allowed' => $this->toBoolean($houseRulesData['events_allowed'] ?? false),
+                    ]
+                );
+            }
+
+            if (array_key_exists('amenities', $validated)) {
+                $amenityIds = $this->resolveAmenityIds($validated['amenities'] ?? []);
+                $property->amenities()->sync($amenityIds);
+            }
+
+            if (array_key_exists('primary_image', $validated) || array_key_exists('images', $validated)) {
+                $this->storePropertyImages(
+                    $property,
+                    $validated['primary_image'] ?? null,
+                    $validated['images'] ?? []
+                );
+            }
+
+            if (array_key_exists('room_details', $validated)) {
+                $property->roomDetails()->delete();
+
+                foreach ($validated['room_details'] ?? [] as $roomDetail) {
+                    if (!is_array($roomDetail)) {
+                        continue;
+                    }
+
+                    $type = $roomDetail['type'] ?? null;
+                    if (empty($type)) {
+                        continue;
+                    }
+
+                    $beds = $this->sanitizeRoomDetailBeds($roomDetail['beds'] ?? []);
+
+                    $property->roomDetails()->create([
+                        'type' => $type,
+                        'beds' => $beds,
+                    ]);
+                }
+            }
+            
+            return $property;
+        });
+
+        $property->refresh();
+
+        $property->load([
+            'houseRules',
+            'amenities',
+            'images' => function ($query) {
+                $query->orderBy('order')->orderBy('is_primary', 'desc');
+            },
+            'reviews' => function ($query) {
+                $query->orderBy('reviewed_at', 'desc');
+            },
+            'parent',
+            'children',
+            'roomDetails',
+        ]);
+
+        return response()->json($this->formatPropertyResponse($property, false));
+    }
+}

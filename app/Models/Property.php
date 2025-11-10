@@ -62,6 +62,8 @@ class Property extends Model
         'capacity_bedrooms',
         'capacity_beds',
         'capacity_bathrooms',
+        'min_rent_age',
+        'host_user_id'
     ];
 
     /**
@@ -100,6 +102,10 @@ class Property extends Model
     public function propertyAmenities(): HasMany
     {
         return $this->hasMany(PropertyAmenity::class, 'property_id');
+    }
+
+    public function host(){
+        return $this->belongsTo(User::class, 'host_user_id');
     }
 
     /**

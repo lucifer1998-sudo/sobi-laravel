@@ -15,8 +15,16 @@ Route::get('/properties/{id}', [PropertiesController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/user', [UsersController::class, 'getAuthUser']);
+    Route::get('/hosts', [UsersController::class, 'getHostsList']);
     Route::resource('users',UsersController::class);
     Route::resource('roles',RolesController::class);
+
+    Route::prefix('/a/listings/')->group(function (){
+        Route::get('table', [PropertiesController::class, 'getListingsTable']);
+        Route::get('{id}', [PropertiesController::class, 'show']);
+        Route::post('{id}',[PropertiesController::class,'update']);
+    });
+
 
 
 });

@@ -177,4 +177,9 @@ class UsersController extends Controller
     public function getAuthUser(){
         return response()->json(Auth::user()->load('roles'));
     }
+
+    public function getHostsList(){
+        $agents = User::role('host')->select('id','name')->get();
+        return response()->json($agents);
+    }
 }
