@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AmentiesController;
 use App\Http\Controllers\Api\PropertiesController;
 use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\UsersController;
@@ -18,6 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/hosts', [UsersController::class, 'getHostsList']);
     Route::resource('users',UsersController::class);
     Route::resource('roles',RolesController::class);
+    Route::resource('amenities',AmentiesController::class);
 
     Route::prefix('/a/listings/')->group(function (){
         Route::get('table', [PropertiesController::class, 'getListingsTable']);
