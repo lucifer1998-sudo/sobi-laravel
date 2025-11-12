@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('table', [PropertiesController::class, 'getListingsTable']);
         Route::get('{id}', [PropertiesController::class, 'show']);
         Route::post('{id}',[PropertiesController::class,'update']);
+        Route::post('{id}/photos/update',[PropertiesController::class,'updatePhotos']);
+        Route::post('{id}/photo/delete',[PropertiesController::class,'deletePhoto']);
     });
 
 

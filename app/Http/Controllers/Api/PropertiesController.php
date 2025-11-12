@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\Property;
+use App\Models\PropertyImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -878,5 +879,45 @@ class PropertiesController extends Controller
         ]);
 
         return response()->json($this->formatPropertyResponse($property, false));
+    }
+
+    public function updatePhotos(Request $request, $id){
+
+        PropertyImage::where('property_id', $id)->delete();
+
+        $requestImages = $request->images;
+        $proprtyImages = [];
+        if(count($requestImages) > 0){
+
+            $images = [];
+            foreach ($requestImages as $image){
+                $imgData = [];
+                $imgData['property_id'] = $id;
+                $imgData['url'] = $image['url'];
+                $imgData['order'] = $image['order'];
+                $imgData['is_primary'] = $image['is_primary'];
+                $images[] = $imgData;
+            }
+
+            $proprtyImages = PropertyImage::insert($images);
+
+        }
+
+        return response()->json($proprtyImages);
+        
+    }
+
+    public function deletePhoto(Request $request, $id){
+        $propertyImage = PropertyImage::where('id', $id)->first();
+        $primaryImage = $propertyImage->is_primary;
+        $propertyId = $propertyImage->property_id;
+        $propertyImage->delete();
+
+        if($primaryImage){
+            $img = PropertyImage::where('property_id', $propertyId)->first();
+            $img->update(['is_primary' => 1]);
+        }
+
+        return response()->json($propertyImage);
     }
 }
