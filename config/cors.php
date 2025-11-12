@@ -21,7 +21,7 @@ return [
 
     'allowed_origins' => ['*'],
 
-    'allowed_origins_patterns' => ['http://sobi.test'],
+    'allowed_origins_patterns' => ['https://sobirentals.com'],
 
     'allowed_headers' => ['*'],
 
