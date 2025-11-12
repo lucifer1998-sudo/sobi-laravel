@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\Property;
 use App\Models\PropertyImage;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PropertiesController extends Controller
 {
@@ -678,7 +682,8 @@ class PropertiesController extends Controller
     /**
      * Store a newly created property along with its related resources.
      */
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         return response()->json($request->all());
     }
 
@@ -795,7 +800,7 @@ class PropertiesController extends Controller
                     'address_display' => $address['display'] ?? null,
                     'latitude' => $latitudeValue !== null && $latitudeValue !== '' ? (float) $latitudeValue : null,
                     'longitude' => $longitudeValue !== null && $longitudeValue !== '' ? (float) $longitudeValue : null,
-                    'address_display' => $address['number'] . ', ' . $address['street'] .', '. $address['city'] .', '. $address['state'] . ', '. $address['postcode'] . ', ' . $countryCode
+                    'address_display' => $address['number'] . ', ' . $address['street'] . ', ' . $address['city'] . ', ' . $address['state'] . ', ' . $address['postcode'] . ', ' . $countryCode
                 ]);
             }
 
@@ -858,7 +863,7 @@ class PropertiesController extends Controller
                     ]);
                 }
             }
-            
+
             return $property;
         });
 
@@ -881,16 +886,17 @@ class PropertiesController extends Controller
         return response()->json($this->formatPropertyResponse($property, false));
     }
 
-    public function updatePhotos(Request $request, $id){
+    public function updatePhotos(Request $request, $id)
+    {
 
         PropertyImage::where('property_id', $id)->delete();
 
         $requestImages = $request->images;
         $proprtyImages = [];
-        if(count($requestImages) > 0){
+        if (count($requestImages) > 0) {
 
             $images = [];
-            foreach ($requestImages as $image){
+            foreach ($requestImages as $image) {
                 $imgData = [];
                 $imgData['property_id'] = $id;
                 $imgData['url'] = $image['url'];
@@ -900,24 +906,83 @@ class PropertiesController extends Controller
             }
 
             $proprtyImages = PropertyImage::insert($images);
-
         }
 
         return response()->json($proprtyImages);
-        
     }
 
-    public function deletePhoto(Request $request, $id){
+    public function deletePhoto(Request $request, $id)
+    {
         $propertyImage = PropertyImage::where('id', $id)->first();
         $primaryImage = $propertyImage->is_primary;
         $propertyId = $propertyImage->property_id;
         $propertyImage->delete();
 
-        if($primaryImage){
+        if ($primaryImage) {
             $img = PropertyImage::where('property_id', $propertyId)->first();
             $img->update(['is_primary' => 1]);
         }
 
         return response()->json($propertyImage);
+    }
+
+    public function uploadPhotos(Request $request, $id)
+    {
+        try {
+            $listing = Property::findOrFail($id);
+
+            $request->validate([
+                'photo' => 'required|image|mimes:jpeg,jpg,png,gif,webp',
+            ]);
+
+            $file = $request->file('photo');
+
+            if (!$file || !$file->isValid()) {
+                return response()->json([
+                    'message' => 'Invalid file uploaded'
+                ], 422);
+            }
+            
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('listings/' . $id, $filename, 'public');
+
+
+            $url = Storage::url($path);
+            $maxOrder = PropertyImage::where('property_id', $id)->max('order') ?? -1;
+
+            $listingImage = PropertyImage::create([
+                'property_id' => $id,
+                'url' => $url,
+                'order' => $maxOrder + 1,
+                'is_primary' => false
+            ]);
+
+            $imageCount = PropertyImage::where('property_id', $id)->count();
+            if ($imageCount === 1) {
+                $listingImage->update(['is_primary' => true]);
+            }
+
+            return response()->json([
+                'id' => $listingImage->id,
+                'url' => asset($url),
+                'order' => $listingImage->order,
+                'is_primary' => $listingImage->is_primary,
+                'caption' => $listingImage->caption,
+            ], 201);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Listing not found'
+            ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Photo upload error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to upload photo: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
