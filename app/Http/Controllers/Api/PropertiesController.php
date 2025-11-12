@@ -834,14 +834,6 @@ class PropertiesController extends Controller
                 $property->amenities()->sync($amenityIds);
             }
 
-            if (array_key_exists('primary_image', $validated) || array_key_exists('images', $validated)) {
-                $this->storePropertyImages(
-                    $property,
-                    $validated['primary_image'] ?? null,
-                    $validated['images'] ?? []
-                );
-            }
-
             if (array_key_exists('room_details', $validated)) {
                 $property->roomDetails()->delete();
 
@@ -899,7 +891,7 @@ class PropertiesController extends Controller
             foreach ($requestImages as $image) {
                 $imgData = [];
                 $imgData['property_id'] = $id;
-                $imgData['url'] = $image['url'];
+                $imgData['url'] = str_replace(config('app.url'),'', $image['url']);
                 $imgData['order'] = $image['order'];
                 $imgData['is_primary'] = $image['is_primary'];
                 $images[] = $imgData;
