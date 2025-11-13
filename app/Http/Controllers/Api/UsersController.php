@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class UsersController extends Controller
 {
@@ -76,7 +78,8 @@ class UsersController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:8', 'confirmed'], // expects password_confirmation
-            'roles' => ['sometimes', 'array']
+            'roles' => ['sometimes', 'array'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'] // 5MB max
         ]);
 
         return DB::transaction(function () use ($validated, $request) {
@@ -85,6 +88,15 @@ class UsersController extends Controller
             $user->email = $validated['email'];
             $user->phone = $validated['phone'] ?? null;
             $user->password = Hash::make($validated['password']);
+            
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                $file = $request->file('avatar');
+                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('users/avatars', $filename, 'public');
+                $user->avatar_url = Storage::url($path);
+            }
+            
             $user->save();
 
             // Optional: assign/sync roles if provided as role IDs
@@ -127,7 +139,8 @@ class UsersController extends Controller
             'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'confirmed'], // if provided, expects password_confirmation
-            'roles' => ['sometimes', 'array']
+            'roles' => ['sometimes', 'array'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'] // 5MB max
         ]);
 
         return DB::transaction(function () use ($validated, $request, $user) {
@@ -142,6 +155,23 @@ class UsersController extends Controller
             }
             if (!empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
+            }
+
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                // Delete old avatar if exists
+                if ($user->avatar_url) {
+                    // avatar_url is stored as relative path like '/storage/users/avatars/filename.jpg'
+                    $oldPath = str_replace('/storage/', '', $user->avatar_url);
+                    if ($oldPath) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+                
+                $file = $request->file('avatar');
+                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('users/avatars', $filename, 'public');
+                $user->avatar_url = Storage::url($path);
             }
 
             $user->save();

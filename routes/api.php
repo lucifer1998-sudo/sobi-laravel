@@ -18,6 +18,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [UsersController::class, 'getAuthUser']);
     Route::get('/hosts', [UsersController::class, 'getHostsList']);
     Route::resource('users',UsersController::class);
+    // Add POST route for updates to handle file uploads
+    Route::post('users/{id}', [UsersController::class, 'update'])->where('id', '[0-9]+');
     Route::resource('roles',RolesController::class);
     Route::resource('amenities',AmentiesController::class);
 
