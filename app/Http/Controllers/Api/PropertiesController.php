@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\Property;
 use App\Models\PropertyImage;
+use App\Models\PropertyTranslation;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -44,10 +46,12 @@ class PropertiesController extends Controller
                 $query->select('id', 'property_id', 'rating');
             },
             'amenities', // Load amenities for list view if needed later
+            // Without this the translated title costs a query per row on the page.
+            'translations',
         ]);
 
         // Search functionality
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', "%{$searchTerm}%")
@@ -58,19 +62,26 @@ class PropertiesController extends Controller
             });
         }
 
-        // Filter by listed status
-        if ($request->has('listed')) {
-            $listed = filter_var($request->listed, FILTER_VALIDATE_BOOLEAN);
-            $query->where('listed', $listed);
-        }
+        // Unlisted properties are never public, whatever the request asks for.
+        $query->where('listed', true);
 
         // Filter by city
-        if ($request->has('city') && !empty($request->city)) {
+        if ($request->has('city') && ! empty($request->city)) {
             $query->where('address_city', 'LIKE', "%{$request->city}%");
         }
 
+        // Filter by state, as picked from the search bar
+        if ($request->filled('state')) {
+            $query->where('address_state', $request->state);
+        }
+
+        // Only show places that can sleep the whole party
+        if ($request->filled('guests')) {
+            $query->where('capacity_max', '>=', (int) $request->guests);
+        }
+
         // Filter by property type
-        if ($request->has('property_type') && !empty($request->property_type)) {
+        if ($request->has('property_type') && ! empty($request->property_type)) {
             $query->where('property_type', $request->property_type);
         }
 
@@ -105,22 +116,123 @@ class PropertiesController extends Controller
         $properties = $query->paginate($perPage);
 
         // Transform the response to minimal format for list view
-        $properties->getCollection()->transform(function ($property) {
-            return $this->formatPropertyMinimalResponse($property);
+        $locale = $this->publicLocale();
+
+        $properties->getCollection()->transform(function ($property) use ($locale) {
+            return $this->formatPropertyMinimalResponse($property, $locale);
         });
 
         return response()->json($properties);
     }
 
     /**
+     * Just enough of each listed property to fill a dropdown. The full index is
+     * paginated and loads images, reviews and amenities, none of which a picker
+     * needs.
+     */
+    public function getOptions(): JsonResponse
+    {
+        $properties = Property::query()
+            ->where('listed', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'public_name', 'address_city', 'address_state'])
+            ->map(fn ($property) => [
+                'id' => $property->id,
+                'name' => $property->public_name ?: $property->name,
+                'city' => $property->address_city,
+                'state' => $property->address_state,
+            ]);
+
+        return response()->json($properties);
+    }
+
+    /**
+     * States and cities that currently have something to show, for the search
+     * bar. Only listed properties count, so no destination leads to an empty
+     * result page.
+     */
+    public function getLocations(): JsonResponse
+    {
+        $states = Property::query()
+            ->where('listed', true)
+            ->whereNotNull('address_state')
+            ->where('address_state', '!=', '')
+            ->groupBy('address_state')
+            ->orderBy('address_state')
+            ->selectRaw('address_state as state, count(*) as total')
+            ->get()
+            ->map(fn ($row) => [
+                'state' => $row->state,
+                'total' => (int) $row->total,
+            ]);
+
+        $cities = Property::query()
+            ->where('listed', true)
+            ->whereNotNull('address_city')
+            ->where('address_city', '!=', '')
+            ->groupBy('address_city', 'address_state')
+            ->orderBy('address_city')
+            ->selectRaw('address_city as city, address_state as state, count(*) as total')
+            ->get()
+            ->map(fn ($row) => [
+                'city' => $row->city,
+                'state' => $row->state,
+                'total' => (int) $row->total,
+            ]);
+
+        return response()->json([
+            'states' => $states,
+            'cities' => $cities,
+        ]);
+    }
+
+    /**
+     * Display a property to site visitors.
+     *
+     * Unlisted properties look missing to the public, but the people who manage
+     * them can still open the page to preview it before going live.
+     */
+    public function showPublic(string $id): JsonResponse
+    {
+        $property = Property::findOrFail($id);
+
+        if (! $property->listed && ! $this->canPreviewUnlisted($property)) {
+            abort(404);
+        }
+
+        return $this->show($id, $this->publicLocale());
+    }
+
+    /**
+     * Owners and staff may preview any unlisted property; a host may preview
+     * only the ones assigned to them.
+     */
+    protected function canPreviewUnlisted(Property $property): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::guard('sanctum')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['owner', 'staff'])) {
+            return true;
+        }
+
+        return $user->hasRole('host') && (int) $property->host_user_id === (int) $user->id;
+    }
+
+    /**
      * Display the specified property by ID.
      */
-    public function show(string $id): JsonResponse
+    public function show(string $id, string $locale = 'en'): JsonResponse
     {
         $property = Property::with([
             'houseRules',
             'amenities',
             'host',
+            'translations',
             'images' => function ($query) {
                 $query->orderBy('order')->orderBy('is_primary', 'desc');
             },
@@ -133,16 +245,50 @@ class PropertiesController extends Controller
         ])->findOrFail($id);
 
         // For detail view, include all reviews (no limit)
-        return response()->json($this->formatPropertyResponse($property, false));
+        return response()->json($this->formatPropertyResponse($property, false, $locale));
     }
 
     /**
      * Format minimal property response for list view.
-     * 
-     * @param Property $property The property instance
-     * @return array
+     *
+     * @param  Property  $property  The property instance
      */
-    protected function formatPropertyMinimalResponse(Property $property): array
+    /**
+     * The language the public pages are being read in, worked out by the
+     * Accept-Language middleware. Admin screens do not call this: they always
+     * read English, because English is what the editor writes back to the
+     * property row and a translated value there would be saved over it.
+     */
+    protected function publicLocale(): string
+    {
+        $locale = app()->getLocale();
+
+        return in_array($locale, config('locales'), true) ? $locale : 'en';
+    }
+
+    /**
+     * Lay the staff written translation over the English the property carries.
+     * A field nobody has translated yet is left alone, so it reads English
+     * rather than coming back empty.
+     */
+    protected function applyTranslations(array $formatted, Property $property, string $locale): array
+    {
+        if ($locale === 'en') {
+            return $formatted;
+        }
+
+        $content = $property->translations->firstWhere('locale', $locale)?->content ?? [];
+
+        foreach (PropertyTranslation::TRANSLATABLE as $field) {
+            if (! empty($content[$field])) {
+                $formatted[$field] = $content[$field];
+            }
+        }
+
+        return $formatted;
+    }
+
+    protected function formatPropertyMinimalResponse(Property $property, string $locale = 'en'): array
     {
         // Calculate average rating from reviews
         $averageRating = $property->reviews->avg('rating');
@@ -150,26 +296,26 @@ class PropertiesController extends Controller
         // Get primary image
         $primaryImage = $property->images->firstWhere('is_primary');
 
-        return [
+        return $this->applyTranslations([
             'id' => $property->id,
             'name' => $property->name,
+            'listed' => (bool) $property->listed,
             'primary_image' => $primaryImage ? [
                 'url' => $primaryImage->url,
             ] : null,
             'reviews_summary' => [
                 'average_rating' => $averageRating ? round($averageRating, 2) : null,
             ],
-        ];
+        ], $property, $locale);
     }
 
     /**
      * Format property response with all relationships.
-     * 
-     * @param Property $property The property instance
-     * @param bool $limitReviews Whether to limit reviews to 10 (for list view)
-     * @return array
+     *
+     * @param  Property  $property  The property instance
+     * @param  bool  $limitReviews  Whether to limit reviews to 10 (for list view)
      */
-    protected function formatPropertyResponse(Property $property, bool $limitReviews = true): array
+    protected function formatPropertyResponse(Property $property, bool $limitReviews = true, string $locale = 'en'): array
     {
         // Calculate average rating from reviews
         $reviews = $property->reviews;
@@ -208,19 +354,19 @@ class PropertiesController extends Controller
         }
 
         // Calculate averages for each category
-        $avgCleanliness = !empty($categoryRatings['cleanliness'])
+        $avgCleanliness = ! empty($categoryRatings['cleanliness'])
             ? round(array_sum($categoryRatings['cleanliness']) / count($categoryRatings['cleanliness']), 2)
             : null;
-        $avgAccuracy = !empty($categoryRatings['accuracy'])
+        $avgAccuracy = ! empty($categoryRatings['accuracy'])
             ? round(array_sum($categoryRatings['accuracy']) / count($categoryRatings['accuracy']), 2)
             : null;
-        $avgCheckin = !empty($categoryRatings['checkin'])
+        $avgCheckin = ! empty($categoryRatings['checkin'])
             ? round(array_sum($categoryRatings['checkin']) / count($categoryRatings['checkin']), 2)
             : null;
-        $avgCommunication = !empty($categoryRatings['communication'])
+        $avgCommunication = ! empty($categoryRatings['communication'])
             ? round(array_sum($categoryRatings['communication']) / count($categoryRatings['communication']), 2)
             : null;
-        $avgLocation = !empty($categoryRatings['location'])
+        $avgLocation = ! empty($categoryRatings['location'])
             ? round(array_sum($categoryRatings['location']) / count($categoryRatings['location']), 2)
             : null;
 
@@ -320,7 +466,7 @@ class PropertiesController extends Controller
         // Format room details
         $roomDetails = $property->roomDetails->map(function ($roomDetail) {
             $beds = [];
-            if (!empty($roomDetail->beds) && is_array($roomDetail->beds)) {
+            if (! empty($roomDetail->beds) && is_array($roomDetail->beds)) {
                 foreach ($roomDetail->beds as $bed) {
                     $beds[] = [
                         'type' => $bed['type'] ?? null,
@@ -337,7 +483,7 @@ class PropertiesController extends Controller
             ];
         })->toArray();
 
-        return [
+        return $this->applyTranslations([
             'id' => $property->id,
             'name' => $property->name,
             'public_name' => $property->public_name,
@@ -351,6 +497,7 @@ class PropertiesController extends Controller
             'currency' => $property->currency,
             'summary' => $property->summary,
             'description' => $property->description,
+            'video_url' => $property->video_url,
             'checkin_time' => $property->checkin_time,
             'checkout_time' => $property->checkout_time,
             'property_type' => $property->property_type,
@@ -385,15 +532,15 @@ class PropertiesController extends Controller
             'updated_at' => $property->updated_at?->toISOString(),
             'min_rent_age' => $property->min_rent_age,
             'host_user_id' => $property->host_user_id,
-            'host' => $property->host
-        ];
+            'host' => $property->host,
+            // The raw translations, so the listing editor can load what is
+            // already there rather than the merged values it would save back.
+            'translations' => $property->translations->keyBy('locale')->map->content,
+        ], $property, $locale);
     }
 
     /**
      * Format room type from snake_case to readable format.
-     *
-     * @param string|null $type
-     * @return string|null
      */
     protected function formatRoomType(?string $type): ?string
     {
@@ -407,9 +554,6 @@ class PropertiesController extends Controller
 
     /**
      * Format bed type from snake_case to readable format.
-     *
-     * @param string|null $type
-     * @return string|null
      */
     protected function formatBedType(?string $type): ?string
     {
@@ -424,7 +568,6 @@ class PropertiesController extends Controller
     /**
      * Resolve amenity identifiers from the incoming payload.
      *
-     * @param array $amenities
      * @return array<int, string>
      */
     protected function resolveAmenityIds(array $amenities): array
@@ -448,11 +591,12 @@ class PropertiesController extends Controller
                 $existingAmenity = Amenity::find($amenityId);
                 if ($existingAmenity) {
                     $ids[] = $existingAmenity->id;
+
                     continue;
                 }
             }
 
-            if (!empty($amenityName)) {
+            if (! empty($amenityName)) {
                 $existingAmenity = Amenity::firstOrCreate(
                     ['name' => $amenityName],
                     [
@@ -476,7 +620,7 @@ class PropertiesController extends Controller
     {
         $prepared = [];
 
-        if (!empty($primaryImage['url'])) {
+        if (! empty($primaryImage['url'])) {
             $prepared[] = [
                 'url' => $primaryImage['url'],
                 'caption' => $primaryImage['caption'] ?? null,
@@ -485,7 +629,7 @@ class PropertiesController extends Controller
         }
 
         foreach ($images as $image) {
-            if (!is_array($image) || empty($image['url'])) {
+            if (! is_array($image) || empty($image['url'])) {
                 continue;
             }
 
@@ -502,7 +646,7 @@ class PropertiesController extends Controller
 
         $primaryIndex = null;
         foreach ($prepared as $index => $image) {
-            if (!empty($image['is_primary'])) {
+            if (! empty($image['is_primary'])) {
                 $primaryIndex = $index;
                 break;
             }
@@ -550,19 +694,19 @@ class PropertiesController extends Controller
     /**
      * Normalise room detail bed payloads.
      *
-     * @param array<int, mixed>|null $beds
+     * @param  array<int, mixed>|null  $beds
      * @return array<int, array<string, mixed>>
      */
     protected function sanitizeRoomDetailBeds(?array $beds): array
     {
-        if (empty($beds) || !is_array($beds)) {
+        if (empty($beds) || ! is_array($beds)) {
             return [];
         }
 
         $normalised = [];
 
         foreach ($beds as $bed) {
-            if (!is_array($bed)) {
+            if (! is_array($bed)) {
                 continue;
             }
 
@@ -614,7 +758,7 @@ class PropertiesController extends Controller
         $query = Property::query();
 
         // Search functionality
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', "%{$searchTerm}%")
@@ -632,12 +776,12 @@ class PropertiesController extends Controller
         }
 
         // Filter by city
-        if ($request->has('city') && !empty($request->city)) {
+        if ($request->has('city') && ! empty($request->city)) {
             $query->where('address_city', 'LIKE', "%{$request->city}%");
         }
 
         // Filter by property type
-        if ($request->has('property_type') && !empty($request->property_type)) {
+        if ($request->has('property_type') && ! empty($request->property_type)) {
             $query->where('property_type', $request->property_type);
         }
 
@@ -680,6 +824,67 @@ class PropertiesController extends Controller
     }
 
     /**
+     * Turn a property's public visibility on or off.
+     *
+     * Deliberately separate from update(), which rewrites every column it is given
+     * and would wipe the rest of the property when sent only this one field.
+     */
+    public function updateListedStatus(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'listed' => 'required|boolean',
+        ]);
+
+        $property = Property::findOrFail($id);
+        $property->listed = $validated['listed'];
+        $property->save();
+
+        return response()->json([
+            'id' => $property->id,
+            'listed' => $property->listed,
+        ]);
+    }
+
+    /**
+     * Save the Spanish or French title and description for one listing.
+     *
+     * Separate from update() for the same reason updateListedStatus() is: that
+     * endpoint rewrites every column it is given. English lives on the property
+     * row itself, so it is not something this can write.
+     */
+    public function updateTranslation(Request $request, string $id, string $locale): JsonResponse
+    {
+        if (! in_array($locale, config('locales'), true) || $locale === 'en') {
+            abort(422, __('messages.unknown_locale'));
+        }
+
+        $property = Property::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $content = [];
+
+        foreach (PropertyTranslation::TRANSLATABLE as $field) {
+            $content[$field] = $validated[$field] ?? '';
+        }
+
+        PropertyTranslation::updateOrCreate(
+            ['property_id' => $property->id, 'locale' => $locale],
+            ['content' => $content]
+        );
+
+        return response()->json([
+            'message' => __('messages.translation_saved'),
+            'id' => $property->id,
+            'locale' => $locale,
+            'content' => $content,
+        ]);
+    }
+
+    /**
      * Store a newly created property along with its related resources.
      */
     public function store(Request $request)
@@ -701,6 +906,7 @@ class PropertiesController extends Controller
             'currency' => 'nullable|string|max:8',
             'summary' => 'nullable|string',
             'description' => 'nullable|string',
+            'video_url' => 'nullable|url|max:2048',
             'checkin_time' => 'nullable',
             'checkout_time' => 'nullable',
             'property_type' => 'nullable|string|max:255',
@@ -759,6 +965,7 @@ class PropertiesController extends Controller
                 'currency' => $validated['currency'] ?? null,
                 'summary' => $validated['summary'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'video_url' => $validated['video_url'] ?? null,
                 'checkin_time' => $validated['checkin_time'] ?? null,
                 'checkout_time' => $validated['checkout_time'] ?? null,
                 'property_type' => $validated['property_type'] ?? null,
@@ -800,7 +1007,7 @@ class PropertiesController extends Controller
                     'address_display' => $address['display'] ?? null,
                     'latitude' => $latitudeValue !== null && $latitudeValue !== '' ? (float) $latitudeValue : null,
                     'longitude' => $longitudeValue !== null && $longitudeValue !== '' ? (float) $longitudeValue : null,
-                    'address_display' => $address['number'] . ', ' . $address['street'] . ', ' . $address['city'] . ', ' . $address['state'] . ', ' . $address['postcode'] . ', ' . $countryCode
+                    'address_display' => $address['number'].', '.$address['street'].', '.$address['city'].', '.$address['state'].', '.$address['postcode'].', '.$countryCode,
                 ]);
             }
 
@@ -838,7 +1045,7 @@ class PropertiesController extends Controller
                 $property->roomDetails()->delete();
 
                 foreach ($validated['room_details'] ?? [] as $roomDetail) {
-                    if (!is_array($roomDetail)) {
+                    if (! is_array($roomDetail)) {
                         continue;
                     }
 
@@ -891,7 +1098,7 @@ class PropertiesController extends Controller
             foreach ($requestImages as $image) {
                 $imgData = [];
                 $imgData['property_id'] = $id;
-                $imgData['url'] = str_replace(config('app.url'),'', $image['url']);
+                $imgData['url'] = str_replace(config('app.url'), '', $image['url']);
                 $imgData['order'] = $image['order'];
                 $imgData['is_primary'] = $image['is_primary'];
                 $images[] = $imgData;
@@ -929,15 +1136,14 @@ class PropertiesController extends Controller
 
             $file = $request->file('photo');
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 return response()->json([
-                    'message' => 'Invalid file uploaded'
+                    'message' => 'Invalid file uploaded',
                 ], 422);
             }
-            
-            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('listings/' . $id, $filename, 'public');
 
+            $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+            $path = $file->storeAs('listings/'.$id, $filename, 'public');
 
             $url = Storage::url($path);
             $maxOrder = PropertyImage::where('property_id', $id)->max('order') ?? -1;
@@ -946,7 +1152,7 @@ class PropertiesController extends Controller
                 'property_id' => $id,
                 'url' => $url,
                 'order' => $maxOrder + 1,
-                'is_primary' => false
+                'is_primary' => false,
             ]);
 
             $imageCount = PropertyImage::where('property_id', $id)->count();
@@ -963,17 +1169,18 @@ class PropertiesController extends Controller
             ], 201);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Listing not found'
+                'message' => 'Listing not found',
             ], 404);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Photo upload error: ' . $e->getMessage());
+            Log::error('Photo upload error: '.$e->getMessage());
+
             return response()->json([
-                'message' => 'Failed to upload photo: ' . $e->getMessage()
+                'message' => 'Failed to upload photo: '.$e->getMessage(),
             ], 500);
         }
     }

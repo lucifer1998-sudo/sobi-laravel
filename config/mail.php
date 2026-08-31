@@ -115,4 +115,17 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Address
+    |--------------------------------------------------------------------------
+    |
+    | Where internal notifications go, such as the alert sent when a visitor
+    | submits a lead. Deliberately has no fallback: if ADMIN_EMAIL is missing
+    | the notification is skipped and logged rather than sent somewhere wrong.
+    |
+    */
+
+    'admin_address' => env('ADMIN_EMAIL'),
+
 ];

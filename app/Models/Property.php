@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Property extends Model
 {
@@ -28,6 +28,15 @@ class Property extends Model
     public $incrementing = false;
 
     /**
+     * Default values for new properties. New listings go live unless turned off.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'listed' => true,
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -38,6 +47,7 @@ class Property extends Model
         'name',
         'public_name',
         'picture_url',
+        'video_url',
         'timezone_offset',
         'listed',
         'currency',
@@ -63,7 +73,7 @@ class Property extends Model
         'capacity_beds',
         'capacity_bathrooms',
         'min_rent_age',
-        'host_user_id'
+        'host_user_id',
     ];
 
     /**
@@ -104,7 +114,8 @@ class Property extends Model
         return $this->hasMany(PropertyAmenity::class, 'property_id');
     }
 
-    public function host(){
+    public function host()
+    {
         return $this->belongsTo(User::class, 'host_user_id');
     }
 
@@ -160,5 +171,13 @@ class Property extends Model
     {
         return $this->hasMany(RoomDetail::class, 'property_id');
     }
-}
 
+    /**
+     * The staff written translations of this property's title and description,
+     * one row per language.
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(PropertyTranslation::class, 'property_id');
+    }
+}

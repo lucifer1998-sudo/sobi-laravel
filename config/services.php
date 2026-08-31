@@ -40,4 +40,13 @@ return [
         'api_key' => env('HOSPITABLE_API_KEY'),
     ],
 
+    'dropbox_sign' => [
+        'api_key' => env('DS_API_KEY'),
+    ],
+
+    'frontend' => [
+        'url' => env('FRONTEND_URL'),
+        'revalidate_secret' => env('REVALIDATE_SECRET'),
+    ],
+
 ];
