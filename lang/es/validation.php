@@ -330,5 +330,7 @@ return [
         'reason_for_moving' => 'motivo de la mudanza',
         'has_legal_issue' => 'antecedentes legales',
         'legal_explanation' => 'explicación legal',
+        'pets.*.type' => 'tipo de mascota',
+        'pets.*.weight' => 'peso del perro',
     ],
 ];

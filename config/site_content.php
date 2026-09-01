@@ -85,6 +85,21 @@ return [
         ],
     ],
 
+    'agreement' => [
+        'intro' => 'Please read the following before signing.',
+
+        // Rich text. This is the agreement an applicant reads and ticks on the
+        // last step of the rental application, so a change here changes what
+        // they are agreeing to. Have it read by someone qualified.
+        'terms_body' => '<p>By submitting this application, I certify that all information provided is true, complete, and accurate to the best of my knowledge. I understand that any false or misleading statement may result in the denial of my application or termination of any resulting lease agreement.</p>'
+            .'<p>I authorize Sobi and its representatives to verify the information provided in this application, including but not limited to my employment history, income, and rental history, and to obtain a consumer credit report and criminal background check from a third-party reporting agency.</p>'
+            .'<p>I understand that any application fee paid is non-refundable, regardless of the outcome of the application, and that submitting this application does not guarantee approval or reservation of the unit.</p>'
+            .'<p>If approved, I agree to sign a formal lease agreement and to comply with all terms, conditions, and community policies outlined therein prior to move-in.</p>'
+            .'<p>I acknowledge that Sobi may contact me by phone, email, or text regarding the status of this application.</p>',
+
+        'certify' => 'I certify that the information provided in this application is true and complete, and I authorize Sobi to verify this information and to obtain a consumer credit report and background check.',
+    ],
+
     'contact' => [
         'heading' => 'We\'re Here To Help — Anytime, Anywhere',
         'intro_paragraph' => 'Have A Question About Your Stay? Need Help With Booking?',

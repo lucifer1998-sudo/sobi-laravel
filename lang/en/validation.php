@@ -208,6 +208,8 @@ return [
         'has_past_employer' => 'past employer',
         'has_legal_issue' => 'legal history',
         'zip' => 'ZIP code',
+        'pets.*.type' => 'pet type',
+        'pets.*.weight' => "dog's weight",
     ],
 
 ];

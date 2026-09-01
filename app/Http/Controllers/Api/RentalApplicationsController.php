@@ -282,6 +282,9 @@ class RentalApplicationsController extends Controller
             'pets' => ['nullable', 'array', 'max:20'],
             'pets.*.type' => ['required', 'string', 'max:50'],
             'pets.*.name' => ['required', 'string', 'max:255'],
+            // A dog's weight decides which units it is allowed in, so it is the
+            // one pet detail worth insisting on. Cats and the rest can skip it.
+            'pets.*.weight' => ['required_if:pets.*.type,Dog', 'nullable', 'numeric', 'min:0', 'max:9999.99'],
 
             'income_sources' => ['nullable', 'array', 'max:20'],
             'income_sources.*.source' => ['required', 'string', 'max:255'],
