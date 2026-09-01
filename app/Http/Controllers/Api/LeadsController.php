@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\LeadReceived;
 use App\Mail\NewLead;
 use App\Models\Lead;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,7 @@ class LeadsController extends Controller
         $lead = Lead::create($validated);
 
         $this->notifyAdmin($lead);
+        $this->confirmToLead($lead);
 
         return response()->json([
             'message' => __('messages.lead_received'),
@@ -109,6 +111,28 @@ class LeadsController extends Controller
         Lead::findOrFail($id)->delete();
 
         return response()->json(['message' => 'Lead deleted successfully.']);
+    }
+
+    /**
+     * Let the person who filled in the form know it arrived. Written in the
+     * language they were reading the site in, which the Accept-Language
+     * middleware has already worked out by this point.
+     *
+     * A confirmation that fails to send is not worth losing the lead over, so
+     * this only logs.
+     */
+    protected function confirmToLead(Lead $lead): void
+    {
+        try {
+            Mail::to($lead->email)
+                ->locale(app()->getLocale())
+                ->send(new LeadReceived($lead));
+        } catch (Throwable $exception) {
+            Log::error('Could not send the lead confirmation.', [
+                'lead_id' => $lead->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     /**
