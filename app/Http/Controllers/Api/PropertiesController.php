@@ -300,6 +300,9 @@ class PropertiesController extends Controller
             'id' => $property->id,
             'name' => $property->name,
             'listed' => (bool) $property->listed,
+            // Composed here rather than in the browser, so a house number the
+            // property is set to hide never reaches the public payload at all.
+            'address_line' => $property->publicAddressLine(),
             'primary_image' => $primaryImage ? [
                 'url' => $primaryImage->url,
             ] : null,
@@ -400,6 +403,7 @@ class PropertiesController extends Controller
             'country_code' => $property->address_country_code,
             'country_name' => $property->address_country_name,
             'display' => $property->address_display,
+            'show_street_number' => (bool) $property->show_street_number,
             'coordinates' => [
                 'latitude' => $property->latitude,
                 'longitude' => $property->longitude,
@@ -922,6 +926,7 @@ class PropertiesController extends Controller
             'address.country' => 'nullable|string|max:2',
             'address.country_name' => 'nullable|string|max:128',
             'address.display' => 'nullable|string|max:255',
+            'address.show_street_number' => 'nullable|boolean',
             'address.latitude' => 'nullable|numeric',
             'address.longitude' => 'nullable|numeric',
             'address.coordinates' => 'nullable|array',
@@ -1009,6 +1014,13 @@ class PropertiesController extends Controller
                     'longitude' => $longitudeValue !== null && $longitudeValue !== '' ? (float) $longitudeValue : null,
                     'address_display' => $address['number'].', '.$address['street'].', '.$address['city'].', '.$address['state'].', '.$address['postcode'].', '.$countryCode,
                 ]);
+
+                // Only touched when the save actually carried it. Defaulting it
+                // here would turn the toggle off again on any save posted from a
+                // form that does not know about it.
+                if (array_key_exists('show_street_number', $address)) {
+                    $attributes['show_street_number'] = $this->toBoolean($address['show_street_number']);
+                }
             }
 
             $capacity = data_get($validated, 'capacity');

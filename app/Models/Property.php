@@ -66,6 +66,7 @@ class Property extends Model
         'address_country_code',
         'address_country_name',
         'address_display',
+        'show_street_number',
         'latitude',
         'longitude',
         'capacity_max',
@@ -86,6 +87,7 @@ class Property extends Model
         return [
             'listed' => 'boolean',
             'calendar_restricted' => 'boolean',
+            'show_street_number' => 'boolean',
             'latitude' => 'double',
             'longitude' => 'double',
             'checkin_time' => 'string',
@@ -96,6 +98,49 @@ class Property extends Model
             'capacity_bathrooms' => 'decimal:1',
             'timezone_offset' => 'string',
         ];
+    }
+
+    /**
+     * The address as the public listing cards show it: street, city, state and
+     * postcode on one line.
+     *
+     * Hospitable puts the house number at the front of address_street ("10 Luke
+     * Road") and uses address_number for the unit ("2"), so the number this
+     * toggle hides is stripped off the street rather than left off the front.
+     * The unit number is never public.
+     */
+    public function publicAddressLine(): ?string
+    {
+        $street = trim((string) $this->address_street);
+
+        if (! $this->show_street_number) {
+            $street = $this->streetWithoutHouseNumber($street);
+        }
+
+        $parts = array_filter([
+            $street,
+            $this->address_city,
+            $this->address_state,
+            $this->address_postcode,
+        ], fn ($part) => $part !== null && trim((string) $part) !== '');
+
+        return $parts === [] ? null : implode(', ', $parts);
+    }
+
+    /**
+     * Drop a leading house number, keeping forms like "10A" and "10-12" in one
+     * piece. An ordinal is a street name ("1st Avenue"), not a number, and a
+     * street that is nothing but a number is left alone rather than emptied.
+     */
+    protected function streetWithoutHouseNumber(string $street): string
+    {
+        if (preg_match('/^\d+(st|nd|rd|th)\b/i', $street)) {
+            return $street;
+        }
+
+        $stripped = trim(preg_replace('/^\d+[a-z]?(-\d+[a-z]?)?\s+/i', '', $street, 1));
+
+        return $stripped === '' ? $street : $stripped;
     }
 
     /**
